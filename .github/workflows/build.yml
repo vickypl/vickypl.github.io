@@ -1,0 +1,37 @@
+name: Build static site
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  build:
+    name: Build on Ubuntu
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify required site files
+        run: |
+          test -f index.html
+          test -f style.css
+          test -f 800kb.jpg
+          test -f index.ico
+
+      - name: Build static site artifact
+        run: |
+          rm -rf dist
+          mkdir -p dist
+          cp index.html style.css 800kb.jpg index.ico dist/
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-site
+          path: dist
