@@ -27,10 +27,11 @@ h1,h2,h3,.brand { font-family: var(--font-heading); }
 .btn-accent { background: var(--accent); color: #052419; border: 1px solid var(--accent); font-weight: 600; }
 .btn-accent:hover { background: transparent; color: var(--accent); }
 .btn-outline-accent { border: 1px solid var(--accent); color: var(--accent); }
-.profile-placeholder, .metric-card, .skill-card, .timeline-item, .project-card, .education-card, .contact-form {
+.profile-photo-wrap, .metric-card, .skill-card, .timeline-item, .project-card, .education-card, .contact-form {
   background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
 }
-.profile-placeholder { min-height: 280px; display:grid; place-items:center; font-size:4rem; color: var(--accent-2); }
+.profile-photo-wrap { min-height: 280px; display:grid; place-items:center; }
+.profile-photo { width: min(100%, 280px); aspect-ratio: 1 / 1; object-fit: cover; border-radius: 50%; border: 1px solid var(--border); }
 .metric-card, .skill-card, .education-card { padding: 1.25rem; }
 .metric-card h3 { margin: 0; color: var(--accent); }
 .section-title h2 { margin-bottom: 2rem; }
