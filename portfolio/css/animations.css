@@ -1,0 +1,18 @@
+.project-card,
+.skill-card,
+.metric-card,
+.timeline-item,
+.btn,
+.education-card {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.project-card:hover,
+.skill-card:hover,
+.metric-card:hover,
+.timeline-item:hover,
+.education-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(56, 189, 248, 0.55);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
+}
