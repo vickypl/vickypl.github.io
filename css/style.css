@@ -286,6 +286,33 @@ header.site-shell {
   font-size: clamp(1rem, 2vw, 1.25rem);
 }
 
+.impact-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin: 1.5rem 0;
+}
+
+.impact-strip span {
+  display: grid;
+  gap: 0.15rem;
+  min-height: 82px;
+  padding: 0.85rem;
+  border: 1px solid rgba(110, 231, 183, 0.2);
+  border-radius: 16px;
+  background: rgba(3, 7, 18, 0.48);
+  color: rgba(226, 232, 240, 0.74);
+  font-size: 0.78rem;
+  line-height: 1.3;
+}
+
+.impact-strip strong {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  line-height: 1;
+}
+
 .hero-cta,
 .project-links,
 .social-links {
@@ -691,6 +718,10 @@ footer {
     grid-template-columns: 1fr;
   }
 
+  .impact-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .timeline-item,
   .timeline-item:nth-child(even) {
     justify-self: stretch;
@@ -764,6 +795,10 @@ footer {
   }
 
   .metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .impact-strip {
     grid-template-columns: 1fr;
   }
 
