@@ -55,6 +55,8 @@ let portal;
 let portalParticles;
 let torusKnot;
 let educationRing;
+let asteroidBelt;
+let spaceAudio;
 let raycaster;
 let pointer;
 let hoveredNode = null;
@@ -67,6 +69,7 @@ let cameraPath;
 document.addEventListener("DOMContentLoaded", () => {
   document.body.classList.add("loading");
   initCommonUi();
+  initSpaceAudio();
 
   if (window.AOS) {
     window.AOS.init({ duration: 700, once: true, offset: 70 });
@@ -131,6 +134,63 @@ function initCommonUi() {
   window.addEventListener("scroll", updateNav, { passive: true });
 }
 
+function initSpaceAudio() {
+  const toggle = document.querySelector(".space-audio-toggle");
+  if (!toggle) return;
+
+  toggle.addEventListener("click", async () => {
+    if (!spaceAudio) {
+      spaceAudio = createDeepSpaceHum();
+    }
+
+    if (spaceAudio.active) {
+      spaceAudio.gain.gain.setTargetAtTime(0, spaceAudio.context.currentTime, 0.9);
+      spaceAudio.active = false;
+    } else {
+      if (spaceAudio.context.state === "suspended") {
+        await spaceAudio.context.resume();
+      }
+      spaceAudio.gain.gain.setTargetAtTime(0.055, spaceAudio.context.currentTime, 1.2);
+      spaceAudio.active = true;
+    }
+
+    toggle.setAttribute("aria-pressed", String(spaceAudio.active));
+    toggle.setAttribute("aria-label", spaceAudio.active ? "Mute deep space ambient hum" : "Play deep space ambient hum");
+    const icon = toggle.querySelector("i");
+    icon?.classList.toggle("fa-volume-low", spaceAudio.active);
+    icon?.classList.toggle("fa-volume-xmark", !spaceAudio.active);
+  });
+}
+
+function createDeepSpaceHum() {
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  const context = new AudioContext();
+  const master = context.createGain();
+  master.gain.value = 0;
+  master.connect(context.destination);
+
+  [36, 48, 72].forEach((frequency, index) => {
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    const lfo = context.createOscillator();
+    const lfoGain = context.createGain();
+
+    oscillator.type = index === 0 ? "sine" : "triangle";
+    oscillator.frequency.value = frequency;
+    gain.gain.value = 0.24 / (index + 1);
+    lfo.frequency.value = 0.035 + index * 0.018;
+    lfoGain.gain.value = 4 + index * 2;
+    lfo.connect(lfoGain);
+    lfoGain.connect(oscillator.frequency);
+    oscillator.connect(gain);
+    gain.connect(master);
+    oscillator.start();
+    lfo.start();
+  });
+
+  return { context, gain: master, active: false };
+}
+
 function initThreeExperience() {
   const canvas = document.getElementById("webgl");
   if (!canvas) return;
@@ -188,8 +248,11 @@ function initThreeExperience() {
 }
 
 function addLights() {
-  scene.add(new THREE.AmbientLight("#818CF8", 1.1));
-  pointLight = new THREE.PointLight("#818CF8", 6, 28);
+  scene.add(new THREE.AmbientLight("#9EA8FF", 0.42));
+  const sun = new THREE.DirectionalLight("#FFF2D0", 5.8);
+  sun.position.set(-8, 4, 8);
+  scene.add(sun);
+  pointLight = new THREE.PointLight("#9FB8FF", 5.6, 38);
   pointLight.position.set(2, 1, 5);
   scene.add(pointLight);
 
@@ -276,6 +339,10 @@ function createDeepSpaceDetails() {
     atmosphere: "#818CF8",
     ring: false
   }));
+  planets.push(createSaturn({
+    radius: 1.08,
+    position: [3.9, 0.6, -12.8]
+  }));
   planets.push(createPlanet({
     radius: 0.86,
     position: [5.6, -0.8, -24],
@@ -292,6 +359,7 @@ function createDeepSpaceDetails() {
     atmosphere: "#6EE7B7",
     ring: false
   }));
+  asteroidBelt = createAsteroidBelt();
 }
 
 function createStarLayer(count, spread, size, color, opacity) {
@@ -362,6 +430,8 @@ function createPlanet({ radius, position, base, land, atmosphere, ring }) {
     new THREE.SphereGeometry(radius, 64, 64),
     new THREE.MeshStandardMaterial({
       map: createPlanetTexture(base, land, "#0B1020"),
+      bumpMap: createPlanetTexture("#111827", "#64748B", "#020617"),
+      bumpScale: radius * 0.08,
       roughness: 0.86,
       metalness: 0.02
     })
@@ -392,6 +462,115 @@ function createPlanet({ radius, position, base, land, atmosphere, ring }) {
 
   scene.add(planet);
   return planet;
+}
+
+function createSaturn({ radius, position }) {
+  const saturn = new THREE.Group();
+  saturn.position.set(...position);
+  saturn.rotation.set(-0.12, 0.2, -0.08);
+
+  const body = new THREE.Mesh(
+    new THREE.SphereGeometry(radius, 96, 96),
+    new THREE.MeshStandardMaterial({
+      map: createGasGiantTexture(),
+      bumpMap: createGasGiantTexture(true),
+      bumpScale: 0.045,
+      roughness: 0.72,
+      metalness: 0.01
+    })
+  );
+  saturn.add(body);
+
+  const ringTexture = createSaturnRingTexture();
+  const rings = new THREE.Mesh(
+    new THREE.RingGeometry(radius * 1.34, radius * 2.38, 256, 10),
+    new THREE.MeshStandardMaterial({
+      map: ringTexture,
+      alphaMap: ringTexture,
+      transparent: true,
+      opacity: 0.92,
+      side: THREE.DoubleSide,
+      roughness: 0.68,
+      metalness: 0.06
+    })
+  );
+  rings.rotation.x = Math.PI * 0.54;
+  rings.rotation.z = Math.PI * 0.08;
+  saturn.add(rings);
+
+  const atmosphere = new THREE.Mesh(
+    new THREE.SphereGeometry(radius * 1.035, 64, 64),
+    new THREE.MeshBasicMaterial({ color: "#F8D99B", transparent: true, opacity: 0.08, blending: THREE.AdditiveBlending, side: THREE.BackSide })
+  );
+  saturn.add(atmosphere);
+  scene.add(saturn);
+  return saturn;
+}
+
+function createGasGiantTexture(monochrome = false) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1024;
+  canvas.height = 512;
+  const ctx = canvas.getContext("2d");
+  const bands = monochrome ? ["#111827", "#334155", "#64748B"] : ["#8D6742", "#D6AF72", "#F3D8A0", "#AF7C45", "#EDD3A5"];
+  for (let y = 0; y < canvas.height; y += 1) {
+    const wave = Math.sin(y * 0.07) * 18 + Math.sin(y * 0.021) * 34;
+    const color = bands[Math.abs(Math.floor((y + wave) / 34)) % bands.length];
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.9;
+    ctx.fillRect(0, y, canvas.width, 1);
+  }
+  for (let i = 0; i < 220; i += 1) {
+    ctx.globalAlpha = 0.025 + Math.random() * 0.045;
+    ctx.fillStyle = i % 2 ? "#ffffff" : "#3B281B";
+    ctx.beginPath();
+    ctx.ellipse(Math.random() * 1024, Math.random() * 512, 40 + Math.random() * 220, 1 + Math.random() * 6, Math.random() * 0.1, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = THREE.RepeatWrapping;
+  return texture;
+}
+
+function createSaturnRingTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1024;
+  canvas.height = 32;
+  const ctx = canvas.getContext("2d");
+  for (let x = 0; x < canvas.width; x += 1) {
+    const t = x / canvas.width;
+    const cassini = t > 0.56 && t < 0.62 ? 0.08 : 1;
+    const grain = 0.72 + Math.random() * 0.28;
+    ctx.fillStyle = `rgba(${Math.floor(226 * grain)}, ${Math.floor(203 * grain)}, ${Math.floor(162 * grain)}, ${Math.min(0.96, (0.22 + Math.sin(t * 64) * 0.1 + Math.random() * 0.28) * cassini)})`;
+    ctx.fillRect(x, 0, 1, canvas.height);
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = THREE.RepeatWrapping;
+  return texture;
+}
+
+function createAsteroidBelt() {
+  const count = 850;
+  const dummy = new THREE.Object3D();
+  const belt = new THREE.InstancedMesh(
+    new THREE.DodecahedronGeometry(0.035, 0),
+    new THREE.MeshStandardMaterial({ color: "#8B7A66", roughness: 0.95, metalness: 0.04 }),
+    count
+  );
+  belt.position.set(0, -0.05, -25);
+  belt.userData.seeds = [];
+  for (let i = 0; i < count; i += 1) {
+    const seed = { angle: Math.random() * Math.PI * 2, radius: 5.5 + Math.random() * 5.8, speed: 0.015 + Math.random() * 0.035, y: (Math.random() - 0.5) * 1.4, scale: 0.45 + Math.random() * 1.9 };
+    belt.userData.seeds.push(seed);
+    dummy.scale.setScalar(seed.scale);
+    dummy.updateMatrix();
+    belt.setMatrixAt(i, dummy.matrix);
+  }
+  scene.add(belt);
+  return belt;
 }
 
 function createPlanetTexture(base, land, shadow) {
@@ -846,6 +1025,20 @@ function animate() {
     planet.rotation.y += delta * (0.05 + index * 0.018);
     planet.rotation.x = Math.sin(elapsed * 0.12 + index) * 0.04;
   });
+
+  if (asteroidBelt) {
+    const dummy = new THREE.Object3D();
+    asteroidBelt.userData.seeds.forEach((seed, index) => {
+      const angle = seed.angle + elapsed * seed.speed;
+      dummy.position.set(Math.cos(angle) * seed.radius, seed.y + Math.sin(elapsed * 0.4 + index) * 0.04, Math.sin(angle) * seed.radius * 0.42);
+      dummy.rotation.set(elapsed * seed.speed * 3, angle, elapsed * seed.speed * 2);
+      dummy.scale.setScalar(seed.scale);
+      dummy.updateMatrix();
+      asteroidBelt.setMatrixAt(index, dummy.matrix);
+    });
+    asteroidBelt.instanceMatrix.needsUpdate = true;
+    asteroidBelt.rotation.y += delta * 0.004;
+  }
 
   if (heroSphere) {
     heroSphere.material.emissiveIntensity = 0.2 + Math.sin(elapsed * 2.2) * 0.04;
