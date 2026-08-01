@@ -128,3 +128,28 @@ void main() {
   gl_FragColor = vec4(accent, 0.18 + intensity * 0.75);
 }
 `;
+
+export const AtmosphereVertexShader = `
+varying vec3 vNormal;
+varying vec3 vViewDir;
+
+void main() {
+  vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+  vNormal = normalize(normalMatrix * normal);
+  vViewDir = normalize(cameraPosition - worldPosition.xyz);
+  gl_Position = projectionMatrix * viewMatrix * worldPosition;
+}
+`;
+
+export const AtmosphereFragmentShader = `
+uniform vec3 atmosphereColor;
+uniform float intensity;
+
+varying vec3 vNormal;
+varying vec3 vViewDir;
+
+void main() {
+  float fresnel = pow(1.0 - max(dot(normalize(vNormal), normalize(vViewDir)), 0.0), 2.5);
+  gl_FragColor = vec4(atmosphereColor, fresnel * intensity);
+}
+`;
