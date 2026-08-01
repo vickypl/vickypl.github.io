@@ -797,11 +797,21 @@ function createSkillGraph() {
   skillGraph.position.set(0, 0.1, -18);
   scene.add(skillGraph);
 
-  const nodeMaterial = new THREE.MeshStandardMaterial({ color: "#818CF8", emissive: "#818CF8", emissiveIntensity: 0.75 });
-  const centerMaterial = new THREE.MeshStandardMaterial({ color: "#6EE7B7", emissive: "#6EE7B7", emissiveIntensity: 1.8 });
-  const nodeGeometry = new THREE.SphereGeometry(0.18, 24, 24);
-  const center = new THREE.Mesh(new THREE.SphereGeometry(0.42, 32, 32), centerMaterial);
-  center.userData = { title: "Backend Systems", items: ["Go", "Java", "SQL", "Bash", "PostgreSQL", "Cassandra", "Redis", "Yugabyte", "Oracle", "MySQL", "MongoDB", "AWS", "Docker", "Kubernetes", "CI/CD", "Harness", "Rancher", "Microservices", "Event-Driven Systems", "Caching", "API Design", "System Design"], hoverable: true };
+  const skillPalettes = [
+    { base: "#312E81", land: "#A78BFA", atmosphere: "#C084FC", ring: true },
+    { base: "#4C1D95", land: "#F472B6", atmosphere: "#F0ABFC", ring: false },
+    { base: "#1E1B4B", land: "#818CF8", atmosphere: "#93C5FD", ring: true },
+    { base: "#581C87", land: "#C4B5FD", atmosphere: "#F472B6", ring: false }
+  ];
+  const center = createSkillPlanet({
+    radius: 0.42,
+    title: "Backend Systems",
+    items: ["Go", "Java", "SQL", "Bash", "PostgreSQL", "Cassandra", "Redis", "Yugabyte", "Oracle", "MySQL", "MongoDB", "AWS", "Docker", "Kubernetes", "CI/CD", "Harness", "Rancher", "Microservices", "Event-Driven Systems", "Caching", "API Design", "System Design"],
+    base: "#064E3B",
+    land: "#6EE7B7",
+    atmosphere: "#A7F3D0",
+    ring: true
+  });
   skillGraph.add(center);
   skillGraph.userData.nodes = [center];
 
@@ -812,9 +822,9 @@ function createSkillGraph() {
   skillGroups.forEach((group, index) => {
     const angle = index / skillGroups.length * Math.PI * 2 + Math.PI * 0.25;
     const clusterPosition = new THREE.Vector3(Math.cos(angle) * 2.25, Math.sin(index * 1.7) * 0.45, Math.sin(angle) * 2.25);
-    const cluster = new THREE.Mesh(new THREE.SphereGeometry(0.28, 28, 28), nodeMaterial.clone());
+    const palette = skillPalettes[index % skillPalettes.length];
+    const cluster = createSkillPlanet({ radius: 0.28, title: group.title, items: group.items, ...palette });
     cluster.position.copy(clusterPosition);
-    cluster.userData = { title: group.title, items: group.items, hoverable: true };
     skillGraph.add(cluster);
     skillGraph.userData.nodes.push(cluster);
     pushLine(linePositions, lineDistances, new THREE.Vector3(), clusterPosition, distanceSeed);
@@ -822,13 +832,13 @@ function createSkillGraph() {
 
     group.items.forEach((item, itemIndex) => {
       const childAngle = itemIndex / group.items.length * Math.PI * 2;
-      const child = new THREE.Mesh(nodeGeometry, nodeMaterial.clone());
+      const childPalette = skillPalettes[(index + itemIndex + 1) % skillPalettes.length];
+      const child = createSkillPlanet({ radius: 0.18, title: item, items: [group.title], ...childPalette, ring: itemIndex % 3 === 0 });
       child.position.set(
         clusterPosition.x + Math.cos(childAngle) * 0.72,
         clusterPosition.y + Math.sin(childAngle * 1.3) * 0.42,
         clusterPosition.z + Math.sin(childAngle) * 0.72
       );
-      child.userData = { title: item, items: [group.title], hoverable: true };
       skillGraph.add(child);
       skillGraph.userData.nodes.push(child);
       pushLine(linePositions, lineDistances, clusterPosition, child.position, distanceSeed);
@@ -850,6 +860,62 @@ function createSkillGraph() {
     }
   });
   skillGraph.add(new THREE.LineSegments(lineGeometry, lineMaterial));
+}
+
+function createSkillPlanet({ radius, title, items, base, land, atmosphere, ring }) {
+  const maps = createPlanetMaps(base, land, "#0B1020");
+  const planet = new THREE.Mesh(
+    new THREE.SphereGeometry(radius, 48, 48),
+    new THREE.MeshStandardMaterial({
+      map: maps.color,
+      bumpMap: maps.bump,
+      bumpScale: radius * 0.14,
+      roughnessMap: maps.roughness,
+      roughness: 0.86,
+      metalness: 0.04,
+      emissive: new THREE.Color(atmosphere),
+      emissiveIntensity: 0.14
+    })
+  );
+  planet.castShadow = true;
+  planet.receiveShadow = true;
+  planet.userData = { title, items, hoverable: true };
+
+  const glow = new THREE.Mesh(
+    new THREE.SphereGeometry(radius * 1.13, 32, 32),
+    new THREE.ShaderMaterial({
+      uniforms: {
+        atmosphereColor: { value: new THREE.Color(atmosphere) },
+        intensity: { value: 0.48 }
+      },
+      vertexShader: AtmosphereVertexShader,
+      fragmentShader: AtmosphereFragmentShader,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      side: THREE.BackSide
+    })
+  );
+  planet.add(glow);
+
+  if (ring) {
+    const ringTexture = createSaturnRingTexture();
+    const planetRing = new THREE.Mesh(
+      new THREE.RingGeometry(radius * 1.35, radius * 2.05, 128, 4),
+      new THREE.MeshStandardMaterial({
+        map: ringTexture,
+        alphaMap: ringTexture,
+        transparent: true,
+        opacity: 0.62,
+        side: THREE.DoubleSide,
+        roughness: 0.78
+      })
+    );
+    planetRing.rotation.x = Math.PI * 0.58;
+    planetRing.rotation.z = Math.PI * 0.18;
+    planet.add(planetRing);
+  }
+
+  return planet;
 }
 
 function pushLine(positions, distances, a, b, seed) {
@@ -910,9 +976,90 @@ function createProjectPanels() {
     panel.position.copy(position);
     panel.rotation.y = index === 0 ? 0.18 : -0.18;
     panel.userData = { interactivePanel: true, index, basePosition: position.clone(), baseScale: new THREE.Vector3(1, 1, 1) };
+    const label = createProjectPanelLabel(index);
+    label.position.z = 0.025;
+    panel.add(label);
     scene.add(panel);
     projectPanels.push(panel);
   });
+}
+
+function createProjectPanelLabel(index) {
+  const projects = [
+    {
+      title: "Large-scale ETL Pipeline",
+      metric: "200M+ records · 99.95% accuracy",
+      copy: "Resilient Go microservices pipeline with Redis caching, safe retries, and production-grade migration controls.",
+      tags: ["Go", "Redis", "ETL", "Concurrency"]
+    },
+    {
+      title: "Event-driven Sync Services",
+      metric: "10M+ events/day · near-zero lag",
+      copy: "Kafka and Cassandra-backed workers designed for high-throughput consistency, observability, and fault tolerance.",
+      tags: ["Kafka", "Cassandra", "Workers", "SLA"]
+    }
+  ];
+  const project = projects[index];
+  const canvas = document.createElement("canvas");
+  canvas.width = 1024;
+  canvas.height = 680;
+  const ctx = canvas.getContext("2d");
+  const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+  gradient.addColorStop(0, "rgba(15,23,42,0.96)");
+  gradient.addColorStop(0.48, "rgba(30,41,59,0.84)");
+  gradient.addColorStop(1, "rgba(6,78,59,0.9)");
+  ctx.fillStyle = gradient;
+  roundRect(ctx, 32, 32, 960, 616, 54);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(110,231,183,0.82)";
+  ctx.lineWidth = 8;
+  ctx.stroke();
+
+  ctx.fillStyle = "#6EE7B7";
+  ctx.font = "700 34px JetBrains Mono, monospace";
+  ctx.fillText(project.metric, 86, 122);
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = "700 58px Space Grotesk, sans-serif";
+  wrapCanvasText(ctx, project.title, 86, 210, 820, 66);
+  ctx.fillStyle = "rgba(226,232,240,0.86)";
+  ctx.font = "500 34px Inter, sans-serif";
+  wrapCanvasText(ctx, project.copy, 86, 360, 830, 46);
+
+  project.tags.forEach((tag, tagIndex) => {
+    const x = 86 + (tagIndex % 2) * 330;
+    const y = 520 + Math.floor(tagIndex / 2) * 58;
+    ctx.fillStyle = "rgba(129,140,248,0.18)";
+    roundRect(ctx, x, y, 275, 40, 20);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(129,140,248,0.44)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = "#C4B5FD";
+    ctx.font = "700 24px JetBrains Mono, monospace";
+    ctx.fillText(tag, x + 24, y + 28);
+  });
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = renderer?.capabilities.getMaxAnisotropy?.() || 1;
+  const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide, depthTest: false });
+  return new THREE.Mesh(new THREE.PlaneGeometry(2.72, 1.78), material);
+}
+
+function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight) {
+  const words = text.split(" ");
+  let line = "";
+  words.forEach((word) => {
+    const testLine = `${line}${word} `;
+    if (ctx.measureText(testLine).width > maxWidth && line) {
+      ctx.fillText(line.trim(), x, y);
+      line = `${word} `;
+      y += lineHeight;
+    } else {
+      line = testLine;
+    }
+  });
+  ctx.fillText(line.trim(), x, y);
 }
 
 function createEducationScene() {
