@@ -140,57 +140,109 @@ function initSpaceAudio() {
   const toggle = document.querySelector(".space-audio-toggle");
   if (!toggle) return;
 
-  toggle.addEventListener("click", async () => {
-    if (!spaceAudio) {
-      spaceAudio = createDeepSpaceHum();
-    }
+  // Initialize the HTML5 Audio element for hum_sound.mp3
+  spaceAudio = new Audio("hum_sound.mp3");
+  spaceAudio.loop = true;
+  spaceAudio.volume = 0; // Start at 0, fade in smoothly
 
-    if (spaceAudio.active) {
-      spaceAudio.gain.gain.setTargetAtTime(0, spaceAudio.context.currentTime, 0.9);
-      spaceAudio.active = false;
-    } else {
-      if (spaceAudio.context.state === "suspended") {
-        await spaceAudio.context.resume();
+  let isFading = false;
+  let fadeInterval = null;
+  const targetVolume = 0.35; // A pleasant, non-obtrusive background level
+
+  const fadeIn = () => {
+    if (isFading) clearInterval(fadeInterval);
+    isFading = true;
+    let vol = spaceAudio.volume;
+    fadeInterval = setInterval(() => {
+      vol = Math.min(targetVolume, vol + 0.05);
+      spaceAudio.volume = vol;
+      if (vol >= targetVolume) {
+        clearInterval(fadeInterval);
+        isFading = false;
       }
-      spaceAudio.gain.gain.setTargetAtTime(0.055, spaceAudio.context.currentTime, 1.2);
-      spaceAudio.active = true;
+    }, 100);
+  };
+
+  const fadeOut = () => {
+    if (isFading) clearInterval(fadeInterval);
+    isFading = true;
+    let vol = spaceAudio.volume;
+    fadeInterval = setInterval(() => {
+      vol = Math.max(0, vol - 0.05);
+      spaceAudio.volume = vol;
+      if (vol <= 0) {
+        clearInterval(fadeInterval);
+        spaceAudio.pause();
+        isFading = false;
+      }
+    }, 100);
+  };
+
+  const playAudio = async () => {
+    try {
+      await spaceAudio.play();
+      fadeIn();
+      updateToggleState(true);
+      removeInteractionListeners();
+    } catch (err) {
+      console.log("Audio play blocked, waiting for user interaction:", err);
     }
+  };
 
-    toggle.setAttribute("aria-pressed", String(spaceAudio.active));
-    toggle.setAttribute("aria-label", spaceAudio.active ? "Mute deep space ambient hum" : "Play deep space ambient hum");
+  const pauseAudio = () => {
+    fadeOut();
+    updateToggleState(false);
+  };
+
+  const updateToggleState = (isPlaying) => {
+    toggle.setAttribute("aria-pressed", String(isPlaying));
+    toggle.setAttribute("aria-label", isPlaying ? "Mute deep space ambient hum" : "Play deep space ambient hum");
     const icon = toggle.querySelector("i");
-    icon?.classList.toggle("fa-volume-low", spaceAudio.active);
-    icon?.classList.toggle("fa-volume-xmark", !spaceAudio.active);
-  });
-}
+    icon?.classList.toggle("fa-volume-low", isPlaying);
+    icon?.classList.toggle("fa-volume-xmark", !isPlaying);
+  };
 
-function createDeepSpaceHum() {
-  const AudioContext = window.AudioContext || window.webkitAudioContext;
-  const context = new AudioContext();
-  const master = context.createGain();
-  master.gain.value = 0;
-  master.connect(context.destination);
-
-  [36, 48, 72].forEach((frequency, index) => {
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
-    const lfo = context.createOscillator();
-    const lfoGain = context.createGain();
-
-    oscillator.type = index === 0 ? "sine" : "triangle";
-    oscillator.frequency.value = frequency;
-    gain.gain.value = 0.24 / (index + 1);
-    lfo.frequency.value = 0.035 + index * 0.018;
-    lfoGain.gain.value = 4 + index * 2;
-    lfo.connect(lfoGain);
-    lfoGain.connect(oscillator.frequency);
-    oscillator.connect(gain);
-    gain.connect(master);
-    oscillator.start();
-    lfo.start();
+  // Toggle button click handler
+  toggle.addEventListener("click", (event) => {
+    event.stopPropagation(); // Prevent event bubbling from triggering window autoplay
+    removeInteractionListeners(); // User interacted directly, remove fallback listeners
+    if (spaceAudio.paused) {
+      playAudio();
+    } else {
+      pauseAudio();
+    }
   });
 
-  return { context, gain: master, active: false };
+  // Fallback autoplay triggers
+  const tryAutoplay = async () => {
+    // If already playing or user has interacted, skip
+    if (!spaceAudio.paused || toggle.getAttribute("aria-pressed") === "true") {
+      removeInteractionListeners();
+      return;
+    }
+    try {
+      await spaceAudio.play();
+      fadeIn();
+      updateToggleState(true);
+      removeInteractionListeners();
+    } catch (err) {
+      // expected if blocked by browser policy
+    }
+  };
+
+  const removeInteractionListeners = () => {
+    window.removeEventListener("click", tryAutoplay);
+    window.removeEventListener("touchstart", tryAutoplay);
+    window.removeEventListener("keydown", tryAutoplay);
+  };
+
+  // Try playing immediately in case browser has relaxed policies
+  tryAutoplay();
+
+  // Otherwise, play on first user interaction
+  window.addEventListener("click", tryAutoplay);
+  window.addEventListener("touchstart", tryAutoplay);
+  window.addEventListener("keydown", tryAutoplay);
 }
 
 function initThreeExperience() {
