@@ -90,7 +90,7 @@ img {
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  opacity: 0.16;
+  opacity: 0.08;
   background-image:
     linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
@@ -115,7 +115,7 @@ img {
     linear-gradient(135deg, rgba(15, 23, 42, 0.88), rgba(3, 7, 18, 0.74)),
     rgba(3, 7, 18, 0.84);
   box-shadow: 0 14px 42px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(18px);
+  backdrop-filter: blur(8px);
   cursor: pointer;
   transition: border-color 180ms ease, color 180ms ease, transform 180ms ease;
 }
@@ -141,6 +141,17 @@ header.site-shell {
   margin: 0 auto;
 }
 
+.section:not(.hero) > .container {
+  padding: clamp(1.35rem, 3vw, 2.25rem);
+  border: 1px solid rgba(226, 232, 240, 0.09);
+  border-radius: 28px;
+  background:
+    linear-gradient(145deg, rgba(3, 7, 18, 0.58), rgba(15, 23, 42, 0.38)),
+    radial-gradient(circle at 0 0, rgba(110, 231, 183, 0.08), transparent 36rem);
+  box-shadow: 0 30px 120px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(6px);
+}
+
 .glass-nav {
   position: fixed;
   top: 0;
@@ -149,7 +160,7 @@ header.site-shell {
   z-index: 40;
   border-bottom: 1px solid rgba(226, 232, 240, 0.08);
   background: rgba(3, 7, 18, 0);
-  backdrop-filter: blur(18px);
+  backdrop-filter: blur(10px);
   transition: background 260ms ease, border-color 260ms ease;
 }
 
@@ -220,7 +231,7 @@ header.site-shell {
   min-height: 100vh;
   display: grid;
   align-items: center;
-  padding: 7.5rem 0;
+  padding: 8rem 0;
 }
 
 .section.compact {
@@ -251,7 +262,13 @@ header.site-shell {
 
 .hero-grid {
   width: min(780px, 100%);
-  padding-top: 5rem;
+  padding: 2rem;
+  margin-top: 5rem;
+  border: 1px solid rgba(226, 232, 240, 0.08);
+  border-radius: 28px;
+  background: linear-gradient(135deg, rgba(3, 7, 18, 0.46), rgba(15, 23, 42, 0.28));
+  box-shadow: 0 30px 120px rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(4px);
 }
 
 .hero h1 {
@@ -371,7 +388,7 @@ header.site-shell {
     linear-gradient(145deg, rgba(15, 23, 42, 0.8), rgba(3, 7, 18, 0.58)),
     radial-gradient(circle at top left, rgba(110, 231, 183, 0.12), transparent 42%);
   box-shadow: var(--shadow);
-  backdrop-filter: blur(18px);
+  backdrop-filter: blur(8px);
 }
 
 .metric-card {
@@ -738,7 +755,8 @@ footer {
   }
 
   .hero-grid {
-    padding-top: 3rem;
+    padding: 1.25rem;
+    margin-top: 3rem;
   }
 
   .hero h1 {

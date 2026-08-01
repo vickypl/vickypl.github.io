@@ -198,21 +198,23 @@ function initThreeExperience() {
   clock = new THREE.Clock();
   scene = new THREE.Scene();
   scene.background = colors.bg;
-  scene.fog = new THREE.FogExp2("#030712", 0.025);
+  scene.fog = new THREE.FogExp2("#030712", 0.014);
 
   camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 260);
   camera.position.set(0, 0.4, 12);
 
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.8));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.2));
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.78;
+  renderer.toneMappingExposure = 0.92;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
-  composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.82, 0.32, 0.48));
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.38, 0.16, 0.64));
 
   controls = new OrbitControls(camera, canvas);
   controls.enabled = false;
@@ -251,6 +253,7 @@ function addLights() {
   scene.add(new THREE.AmbientLight("#9EA8FF", 0.42));
   const sun = new THREE.DirectionalLight("#FFF2D0", 5.8);
   sun.position.set(-8, 4, 8);
+  sun.castShadow = true;
   scene.add(sun);
   pointLight = new THREE.PointLight("#9FB8FF", 5.6, 38);
   pointLight.position.set(2, 1, 5);
@@ -436,6 +439,8 @@ function createPlanet({ radius, position, base, land, atmosphere, ring }) {
       metalness: 0.02
     })
   );
+  body.castShadow = true;
+  body.receiveShadow = true;
   planet.add(body);
 
   const glow = new THREE.Mesh(
@@ -479,6 +484,8 @@ function createSaturn({ radius, position }) {
       metalness: 0.01
     })
   );
+  body.castShadow = true;
+  body.receiveShadow = true;
   saturn.add(body);
 
   const ringTexture = createSaturnRingTexture();
@@ -496,6 +503,8 @@ function createSaturn({ radius, position }) {
   );
   rings.rotation.x = Math.PI * 0.54;
   rings.rotation.z = Math.PI * 0.08;
+  rings.castShadow = true;
+  rings.receiveShadow = true;
   saturn.add(rings);
 
   const atmosphere = new THREE.Mesh(
@@ -530,6 +539,7 @@ function createGasGiantTexture(monochrome = false) {
   ctx.globalAlpha = 1;
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = renderer?.capabilities.getMaxAnisotropy?.() || 1;
   texture.wrapS = THREE.RepeatWrapping;
   return texture;
 }
@@ -548,6 +558,7 @@ function createSaturnRingTexture() {
   }
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = renderer?.capabilities.getMaxAnisotropy?.() || 1;
   texture.wrapS = THREE.RepeatWrapping;
   return texture;
 }
