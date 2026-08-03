@@ -137,14 +137,14 @@ header.site-shell {
 }
 
 .container {
-  width: min(1120px, calc(100% - 2rem));
+  width: min(1440px, calc(100% - 3rem));
   margin: 0 auto;
 }
 
 .section:not(.hero) > .container {
-  padding: clamp(1.35rem, 3vw, 2.25rem);
+  padding: clamp(2rem, 5vw, 4rem);
   border: 1px solid rgba(226, 232, 240, 0.09);
-  border-radius: 28px;
+  border-radius: 32px;
   background:
     linear-gradient(145deg, rgba(3, 7, 18, 0.58), rgba(15, 23, 42, 0.38)),
     radial-gradient(circle at 0 0, rgba(110, 231, 183, 0.08), transparent 36rem);
@@ -254,18 +254,18 @@ header.site-shell {
   margin-bottom: 1rem;
   color: var(--accent);
   font-family: var(--font-mono);
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .hero-grid {
-  width: min(780px, 100%);
-  padding: 2rem;
+  width: min(1100px, 100%);
+  padding: clamp(2rem, 5vw, 4rem);
   margin-top: 5rem;
   border: 1px solid rgba(226, 232, 240, 0.08);
-  border-radius: 28px;
+  border-radius: 32px;
   background: linear-gradient(135deg, rgba(3, 7, 18, 0.46), rgba(15, 23, 42, 0.28));
   box-shadow: 0 30px 120px rgba(0, 0, 0, 0.24);
   backdrop-filter: blur(4px);
@@ -281,9 +281,9 @@ header.site-shell {
 }
 
 .lead-copy {
-  width: min(690px, 100%);
+  width: min(900px, 100%);
   color: rgba(226, 232, 240, 0.82);
-  font-size: clamp(1rem, 2vw, 1.25rem);
+  font-size: clamp(1rem, 2vw, 1.35rem);
 }
 
 .impact-strip {
@@ -309,7 +309,7 @@ header.site-shell {
 .impact-strip strong {
   color: var(--accent);
   font-family: var(--font-mono);
-  font-size: clamp(1rem, 2vw, 1.25rem);
+  font-size: clamp(1.1rem, 2.5vw, 1.4rem);
   line-height: 1;
 }
 
@@ -486,8 +486,8 @@ header.site-shell {
 
 .timeline-item {
   position: relative;
-  width: min(560px, 100%);
-  padding: clamp(1.2rem, 3vw, 1.6rem);
+  width: min(800px, 100%);
+  padding: clamp(1.5rem, 4vw, 2.5rem);
 }
 
 .timeline-item:nth-child(odd) {
@@ -528,7 +528,7 @@ header.site-shell {
 .small-muted {
   color: rgba(129, 140, 248, 0.9);
   font-family: var(--font-mono);
-  font-size: 0.86rem;
+  font-size: 0.95rem;
 }
 
 .timeline-item ul {
@@ -580,7 +580,7 @@ header.site-shell {
   color: var(--accent);
   background: rgba(129, 140, 248, 0.08);
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
 }
 
 .project-links a,
@@ -592,8 +592,8 @@ header.site-shell {
 
 .education-card,
 .contact-card {
-  width: min(720px, 100%);
-  padding: clamp(1.4rem, 4vw, 2rem);
+  width: min(1000px, 100%);
+  padding: clamp(2rem, 5vw, 4rem);
 }
 
 .education-card {
